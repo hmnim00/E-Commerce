@@ -1,0 +1,48 @@
+{% extends 'auctions/layout.html' %}
+
+{% block body %}
+    <div class="container mt-5">
+        <h2>New listing</h2>
+        <div class="row p-4">
+            <div class="col-md-8 pl-4 pr-4 offset-1">
+                <form action="{% url 'createListing' %}" method="POST">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="title">Title</label>
+                        <input type="text" name="title" id="title" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea name="description" id="description" rows="6" class="form-control"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="category">Category</label>
+                        <select name="category" id="category" class="form-control">
+                            <option>Fashion</option>
+                            <option>Tools</option>
+                            <option>Toys</option>
+                            <option>Electronics</option>
+                            <option>Home</option>
+                            <option>Books</option>
+                            <option>Music</option>
+                            <option>Tech</option>
+                            <option>Sports</option>
+                            <option>Videogames</option>
+                            <option>Astronomy</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="bid">Initial bid</label>
+                        <input type="number" name="initialBid" id="bid" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="url">Product image URL</label>
+                        <input type="text" name="imgUrl" id='url', class="form-control">
+                    </div>
+                    <button class="btn btn-primary" type="submit">Create</button>
+                </form>
+            </div>
+            <div class="col-md-4"></div>
+        </div>
+    </div>
+{% endblock %}

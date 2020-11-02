@@ -1,0 +1,56 @@
+{% extends 'auctions/layout.html' %}
+{% load static %}
+{% block body %}
+
+    <div class="container mt-3">
+        <h2>Watchlist</h2>
+        <div class="row">
+            <div class="card-deck">
+                {% for item in items %}
+                    {% for i in item %}
+                        <div class="col-md-4">
+                            <div class="card mt-5">
+                                <div class="imageContainer">
+                                    <a href="{% url 'listing' i.id %}">
+                                        <img src="{{ i.imageUrl}}" class="card-img-top p-2 imageThumb" alt="image">
+                                    </a>
+                                </div><hr>
+                                <div class="card-body">
+                                    <a href="{% url 'listing' i.id %}">
+                                        <h5 class="card-title">{{ i.title }}</h5>
+                                    </a>
+                                    <p class="card-text">{{ i.description }}</p>
+                                </div>
+                                <div class="card-footer">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <small class="text-muted">Published on: {{ i.createdAt }}</small>
+                                        </div>
+                                        <div class="col-md-4 text-center">
+                                            {% if i.status == True %}
+                                                <p class="statusActive">Active</p>
+                                            {% else %}
+                                                <p class="statusClosed">Closed</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    {% empty %}
+                        <div class="row">
+                            <div class="col-md-5 p-5">
+                                <img src="{% static 'auctions/img/no-listings.png' %}" width="80%" alt="">
+                            </div>
+                            <div class="col-md-7">
+                                <h3 class="mt-5 pt-5">No Listings Found in your Watchlist</h3>
+                                <h5>Go back to <a href="{% url 'index' %}">Active listings</a>.</h5>
+                            </div>
+                        </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

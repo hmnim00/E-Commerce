@@ -1,0 +1,171 @@
+{% extends 'auctions/layout.html' %}
+
+{% block body %}
+    <div class="container-fluid mt-3 listingPage">
+        <div class="row text-center">
+            <div class="mr-auto">
+                <b class="mr-3">Category: </b><a href="{% url 'category' item.category %}">{{ item.category }}</a>
+            </div>
+            <div class="statusInfo ml-auto">
+                {% if item.status == True %}
+                    <p class="statusActive">Active</p>
+                {% else %}
+                    <p class="statusClosed">Closed</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-md-5 text-center">
+                <div class="img-position p-3">
+                    <img src="{{ item.imageUrl }}" alt="" class="img-fluid imageThumbBig">
+                </div>
+            </div>
+            <div class="col-md-7 pl-3">
+                <h2><b>{{ item.title }}</b></h2>
+                <p class="mt-4 pr-5 description">{{ item.description }}</p><hr>
+                <div class="row">
+                    <div class="col-md-5">
+                        <ul>
+                            {% if item.status == True %}
+                                <li><b>Seller: </b>{{ item.owner }}</li>
+                                <li><b>Published on: </b>{{ item.createdAt }}</li>
+                            {% else %}
+                                <li><b>Seller: </b>{{ item.owner }}</li>
+                                <li><b>Published on: </b>{{ item.createdAt }}</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center">
+                        {% if item.status == True %}
+                            <p class="initialBid">Initial price: ${{ item.initialBid }}</p>
+                        {% else %}
+                            <p class="currentBid">Winning price: <b class="ml-2">${{ item.currentBid }}</b></p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 d-flex align-items-center">
+                        {% if item.status == True %}
+                            {% if user.is_authenticated %}
+                                {% if added %}
+                                    <a href="{% url 'removeFromWatchlist' item.id %}" class="float-left">
+                                        <button class="removeWatchlist"><i class="fas fa-bookmark mr-2"></i>Remove</button>
+                                        <!-- <button class="btn btn-danger">Remove from watchlist</button> -->
+                                    </a>
+                                {% else %}
+                                    <a href="{% url 'addToWatchlist' item.id %}" class="float-left">
+                                        <button class="addWatchlist"><i class="far fa-bookmark mr-2"></i>Save</button>
+                                        <!-- <button class="btn btn-primary">Add to watchlist</button> -->
+                                    </a>
+                                {% endif %}
+                            {% else %}
+                                <p><a href="{% url 'login' %}">Log In</a> to add to watchlist</p>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div><hr>
+                {% if item.status == False %}
+                    {% if user == item.winner %}
+                        <h4>Congratulations <b>{{ item.winner}}</b>! You have won the Listing</h4>
+                    {% else %}
+                        <h4><b>{{ item.winner}}</b> Has won the Listing</h4>
+                    {% endif %}
+                {% endif %}
+                <div class="row">
+                    <div class="col-md-8 d-flex align-items-center">
+                        {% if item.status == True %}
+                            {% if item.currentBid == item.initialBid %}
+                                <p class="initialBid"></p>
+                            {% else%}
+                                <ul>
+                                    <li>
+                                        <p class="currentBid">Current bid: ${{ item.currentBid }}</p>
+                                    </li>
+                                </ul>    
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        {% if user.is_authenticated %}
+                            {% if item.status == True %}
+                                {% if user.username %}
+                                    <div class="form text-center">
+                                        {% if user == item.owner %}
+                                            <a href="{% url 'closeListing' item.id %}" class="btn btn-warning">Close listing</a>
+                                        {% else %}
+                                            <h5>Make a bid</h5>
+                                            <form action="{% url 'makeOffer' item.id %}" method="POST">
+                                                {% csrf_token %}
+                                                <div class="form-group">
+                                                    <input type="number" name="offer" class="form-control">
+                                                </div>
+                                                <div class="form-group">
+                                                    <button type="submit" class="form-control btn btn-primary">Submit</button>
+                                                </div>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                        {% else %}
+                            <p><a href="{% url 'login' %}">Log In</a> to submit a bid</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if success %}
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <button type="button" class="close" data-dismiss='alert'>&times</button>
+                        {{ success }}
+                    </div>
+                {% endif %}
+                {% if error %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <button type="button" class="close" data-dismiss='alert'>&times</button>
+                        {{ error }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="container mt-4">
+        <div class="row">
+            <p class="commentsTitle"><b>Comments </b>({{ allComm }})</p>
+        </div>
+        {% if allComm == 0 %}
+            <div class="row pl-5 pr-5 mr-5 ml-5">
+                <p class="dateComment">There are no comments. Say something about this</p>
+            </div>
+        {% else %}
+            {% for com in comments %}
+                <div class="row pl-5 pr-5 mt-5 ml-3 mr-3 commentContainer">
+                    <div class="col-md-6">
+                        <p class="userComment float-left">{{ com.user }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="dateComment float-right">{{ com.createdAt }} ago</p>
+                    </div>
+                    <div class="col-md-12 pr-5 pl-5 text-justify commentary">
+                        <p>{{ com.comment}}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+        <div class="row">
+            <div class="col-md-12 pr-5 pl-5 mt-3">
+                {% if user.is_authenticated %}
+                    <form action="{% url 'comment' item.id %}" method="POST" class="pr-5 pl-5">
+                        {% csrf_token %}
+                        <div class="form-group pr-5 pl-5">
+                            <textarea class="form-control" name="comment" cols="30" rows="4" placeholder="Write a comment" required></textarea>
+                        </div>
+                        <div class="form-group pr-5 pl-5">
+                            <button type="submit" class="btn btn-success float-right">Comment</button>
+                        </div>
+                    </form>
+                {% else %}
+                    <div class="text-center">
+                        <p><a href="{% url 'login' %}">Log In</a> to comment</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
