@@ -1,171 +1,150 @@
 {% extends 'auctions/layout.html' %}
 
 {% block body %}
-    <div class="container-fluid mt-3 listingPage">
-        <div class="row text-center">
-            <div class="mr-auto">
-                <b class="mr-3">Category: </b><a href="{% url 'category' item.category %}">{{ item.category }}</a>
-            </div>
-            <div class="statusInfo ml-auto">
-                {% if item.status == True %}
-                    <p class="statusActive">Active</p>
-                {% else %}
-                    <p class="statusClosed">Closed</p>
-                {% endif %}
-            </div>
+<div class="container mt-3">
+    <div class="row">
+        <div class="col-md-4 mt-4 mx-auto listing-image">
+            <img src="{{ listing.image.url }}" class="img-fluid" alt="{{ listing.image.url }}">
         </div>
-        <div class="row mt-2">
-            <div class="col-md-5 text-center">
-                <div class="img-position p-3">
-                    <img src="{{ item.imageUrl }}" alt="" class="img-fluid imageThumbBig">
+        <div class="col-md-6 mt-4">
+            <h1>{{ listing.title }}</h1>
+            {% if listing.status %}
+            <div class="card-img">
+                <span class="badge badge-pill badge-danger">Active</span>
+                {% if request.user == listing.owner %}
+                <a href="{% url 'deleteListing' listing.id %}" class="btn btn-danger btn-sm rounded float-right">Delete</a>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="card-img">
+                <span class="badge badge-pill badge-dark">Closed</span>
+            </div>
+            {% endif %}
+            <hr>
+            <p><strong>Description: </strong><br>{{ listing.description }}</p>
+            <div class="row">
+                <div class="col-md-8">
+                    <h6><strong>Seller: </strong>{{ listing.owner }}</h6>
+                    <h6><strong>Initial Bid: </strong>${{ listing.initialBid }}</h6>
+                </div>
+                <div class="col-md-4">
+                    {% if request.user != listing.owner %}
+                    {% if user.is_authenticated %}
+                    {% if added %}
+                    <a href="{% url 'removeFromWatchlist' listing.id %}"
+                        class="badge badge-warning p-2 float-right mt-4">
+                        <span><i class="fas fa-bookmark mr-2"></i> Remove from watchlist</span>
+                    </a>
+                    {% else %}
+                    <a href="{% url 'addToWatchlist' listing.id %}" class="badge badge-warning p-2 float-right mt-4">
+                        <span><i class="fas fa-bookmark mr-2"></i> Add to watchlist</span>
+                    </a>
+                    {% endif %}
+                    {% endif %}
+                    {% endif %}
                 </div>
             </div>
-            <div class="col-md-7 pl-3">
-                <h2><b>{{ item.title }}</b></h2>
-                <p class="mt-4 pr-5 description">{{ item.description }}</p><hr>
-                <div class="row">
-                    <div class="col-md-5">
-                        <ul>
-                            {% if item.status == True %}
-                                <li><b>Seller: </b>{{ item.owner }}</li>
-                                <li><b>Published on: </b>{{ item.createdAt }}</li>
-                            {% else %}
-                                <li><b>Seller: </b>{{ item.owner }}</li>
-                                <li><b>Published on: </b>{{ item.createdAt }}</li>
-                            {% endif %}
-                        </ul>
-                    </div>
-                    <div class="col-md-4 d-flex align-items-center">
-                        {% if item.status == True %}
-                            <p class="initialBid">Initial price: ${{ item.initialBid }}</p>
+            <hr>
+            {% if listing.status %}
+                {% if request.user == listing.owner %}
+                <div class="row p-4">
+                    <div class="col-md-6">
+                        {% if listing.currentBid == listing.initialBid %}
+                        <h4>No bids have been made yet</h4>
+                        <a href="{% url 'closeListing' listing.id %}" class="btn btn-bg btn-primary btn-block disabled" aria-disabled="true">Close listing</a>
                         {% else %}
-                            <p class="currentBid">Winning price: <b class="ml-2">${{ item.currentBid }}</b></p>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-3 d-flex align-items-center">
-                        {% if item.status == True %}
-                            {% if user.is_authenticated %}
-                                {% if added %}
-                                    <a href="{% url 'removeFromWatchlist' item.id %}" class="float-left">
-                                        <button class="removeWatchlist"><i class="fas fa-bookmark mr-2"></i>Remove</button>
-                                        <!-- <button class="btn btn-danger">Remove from watchlist</button> -->
-                                    </a>
-                                {% else %}
-                                    <a href="{% url 'addToWatchlist' item.id %}" class="float-left">
-                                        <button class="addWatchlist"><i class="far fa-bookmark mr-2"></i>Save</button>
-                                        <!-- <button class="btn btn-primary">Add to watchlist</button> -->
-                                    </a>
-                                {% endif %}
-                            {% else %}
-                                <p><a href="{% url 'login' %}">Log In</a> to add to watchlist</p>
-                            {% endif %}
-                        {% endif %}
-                    </div>
-                </div><hr>
-                {% if item.status == False %}
-                    {% if user == item.winner %}
-                        <h4>Congratulations <b>{{ item.winner}}</b>! You have won the Listing</h4>
-                    {% else %}
-                        <h4><b>{{ item.winner}}</b> Has won the Listing</h4>
-                    {% endif %}
-                {% endif %}
-                <div class="row">
-                    <div class="col-md-8 d-flex align-items-center">
-                        {% if item.status == True %}
-                            {% if item.currentBid == item.initialBid %}
-                                <p class="initialBid"></p>
-                            {% else%}
-                                <ul>
-                                    <li>
-                                        <p class="currentBid">Current bid: ${{ item.currentBid }}</p>
-                                    </li>
-                                </ul>    
-                            {% endif %}
-                        {% endif %}
-                    </div>
-                    <div class="col-md-4">
-                        {% if user.is_authenticated %}
-                            {% if item.status == True %}
-                                {% if user.username %}
-                                    <div class="form text-center">
-                                        {% if user == item.owner %}
-                                            <a href="{% url 'closeListing' item.id %}" class="btn btn-warning">Close listing</a>
-                                        {% else %}
-                                            <h5>Make a bid</h5>
-                                            <form action="{% url 'makeOffer' item.id %}" method="POST">
-                                                {% csrf_token %}
-                                                <div class="form-group">
-                                                    <input type="number" name="offer" class="form-control">
-                                                </div>
-                                                <div class="form-group">
-                                                    <button type="submit" class="form-control btn btn-primary">Submit</button>
-                                                </div>
-                                            </form>
-                                        {% endif %}
-                                    </div>
-                                {% endif %}
-                            {% endif %}
-                        {% else %}
-                            <p><a href="{% url 'login' %}">Log In</a> to submit a bid</p>
+                        <h4><strong>Current price: </strong> ${{ listing.currentBid }} </h4>
+                        <a href="{% url 'closeListing' listing.id %}" class="btn btn-bg btn-primary btn-block">Close listing</a>
                         {% endif %}
                     </div>
                 </div>
-                {% if success %}
+                {% endif %}
+            
+            <div class="row">
+                <div class="col-md-12">
+                    {% if success %}
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
                         <button type="button" class="close" data-dismiss='alert'>&times</button>
                         {{ success }}
                     </div>
-                {% endif %}
-                {% if error %}
+                    {% endif %}
+                    {% if error %}
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
                         <button type="button" class="close" data-dismiss='alert'>&times</button>
                         {{ error }}
                     </div>
-                {% endif %}
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    {% if request.user != listing.owner %}
+                    {% if listing.currentBid != listing.initialBid %}
+                    <h4><strong>Current bid: </strong> ${{ listing.currentBid}}</h4>
+                    {% endif %}
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    {% if request.user != listing.owner %}
+                        {% if request.user.is_authenticated %}
+                        <form action="{% url 'makeOffer' listing.id %}" method="POST">
+                            {% csrf_token %}
+                            <label for="new-bid" class="label"><strong>Make an offer</strong></label>
+                            <div class="form-group">
+                                <input type="number" name="offer" class="form-control" required>
+                            </div>
+                            <button type="submit" class="btn btn-block btn-success">Submit bid</button>
+                        </form>
+                        {% endif %}
+                    {% endif %}
+                </div>
             </div>
+            {% else %}
+            <div class="row">
+                <div class="col-md-8 mx-auto">
+                    <h3 class="mb-3">Closed listed</h3>
+                    <h5>The item has been sold in ${{ listing.currentBid }} to</h5>
+                    <h5><strong>{{ listing.winner }}</strong></h5>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
-    <div class="container mt-4">
-        <div class="row">
-            <p class="commentsTitle"><b>Comments </b>({{ allComm }})</p>
+    <hr>
+    {% if listing.status %}
+    <div class="row mt-4">
+        <div class="col-sm-12 mb-3">
+            <h4>Comments ({{ allComm }})</h4>
         </div>
-        {% if allComm == 0 %}
-            <div class="row pl-5 pr-5 mr-5 ml-5">
-                <p class="dateComment">There are no comments. Say something about this</p>
-            </div>
-        {% else %}
-            {% for com in comments %}
-                <div class="row pl-5 pr-5 mt-5 ml-3 mr-3 commentContainer">
-                    <div class="col-md-6">
-                        <p class="userComment float-left">{{ com.user }}</p>
-                    </div>
-                    <div class="col-md-6">
-                        <p class="dateComment float-right">{{ com.createdAt }} ago</p>
-                    </div>
-                    <div class="col-md-12 pr-5 pl-5 text-justify commentary">
-                        <p>{{ com.comment}}</p>
-                    </div>
+        <div class="col-md-9 mx-auto my-3">
+            {% if request.user.is_authenticated %}
+            <form action="{% url 'comment' listing.id %}" class="form" method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <textarea class="form-control" name="comment" cols="30" rows="3" placeholder="Write a comment"
+                        required></textarea>
                 </div>
+                <div class="form-group float-right">
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+            </form>
+            {% else %}
+            <h5 class="text-center"><a href="{% url 'login' %}">Login</a> or <a href="{% url 'register' %}">Register</a> to add comments and make bids for this product.</h5>
+            {% endif %}
+        </div>
+    </div>
+    <div class="row my-4">
+        {% if allComm == 0 %}
+        <div class="col-md-8 mx-auto">
+            <p class="text-justify" id="comment">There are no comments yet. Say something about this product.</p>
+        </div>
+        {% else %}
+            {% for comment in comments %}
+            <div class="col-md-8 mx-auto border px-3 py-2">
+                <label for="comment" class="d-flex justify-content-between"><strong>{{ comment.user }}</strong><span class="text-secondary">{{ comment.createdAt }}</span></label>
+                <p class="text-justify" id="comment">{{ comment.comment }}</p>
+            </div>
             {% endfor %}
         {% endif %}
-        <div class="row">
-            <div class="col-md-12 pr-5 pl-5 mt-3">
-                {% if user.is_authenticated %}
-                    <form action="{% url 'comment' item.id %}" method="POST" class="pr-5 pl-5">
-                        {% csrf_token %}
-                        <div class="form-group pr-5 pl-5">
-                            <textarea class="form-control" name="comment" cols="30" rows="4" placeholder="Write a comment" required></textarea>
-                        </div>
-                        <div class="form-group pr-5 pl-5">
-                            <button type="submit" class="btn btn-success float-right">Comment</button>
-                        </div>
-                    </form>
-                {% else %}
-                    <div class="text-center">
-                        <p><a href="{% url 'login' %}">Log In</a> to comment</p>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
     </div>
+    {% endif %}
+</div>
 {% endblock %}

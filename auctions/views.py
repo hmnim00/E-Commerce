@@ -1,3 +1,4 @@
+from auctions.forms import ListingForm
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
@@ -11,17 +12,20 @@ from .models import Bid, Comment, Listing, User, Watchlist
 
 
 def index(request):
-    items = Listing.objects.filter(status = True)
+    listings = Listing.objects.filter(status=True)
+    categories = Listing.objects.raw(
+        'SELECT * FROM auctions_listing GROUP BY category HAVING COUNT(*)>=1')
     empty = False
     try:
-        w = Watchlist.objects.filter(user = request.user)
+        w = Watchlist.objects.filter(user=request.user)
         total = len(w)
     except:
         total = None
     return render(request, 'auctions/index.html', {
-        'items': items,
+        'listings': listings,
         'total': total,
-        'empty': empty
+        'empty': empty,
+        'categories': categories
     })
 
 
@@ -80,76 +84,74 @@ def register(request):
 @login_required(login_url='login')
 def newListing(request):
     try:
-        watch = Watchlist.objects.filter( user = request.user )
+        watch = Watchlist.objects.filter(user=request.user)
         total = len(watch)
     except:
         total = None
-    
+
     return render(request, 'auctions/new-listing.html', {
         'total': total
     })
 
 
+@login_required
 def createListing(request):
-    try:
-        if request.method == 'POST':
-            newListing = Listing()
-            newListing.owner = request.user
-            newListing.title = request.POST.get('title')
-            newListing.description = request.POST.get('description')
-            newListing.category = request.POST.get('category')
-            newListing.initialBid = request.POST.get('initialBid')
-            newListing.currentBid = newListing.initialBid
-            if request.POST.get('imgUrl'):
-                newListing.imageUrl = request.POST.get('imgUrl')
-            else:
-                newListing.imageUrl = 'https://www.freeiconspng.com/uploads/no-image-icon-4.png'
-            newListing.save()
-            
-            return redirect('index')
+    owner = Listing(owner=request.user)
+    form = ListingForm()
+
+    if request.method == 'POST':
+        form = ListingForm(request.POST, request.FILES, instance=owner)
+
+        if form.is_valid():
+            form.instance.currentBid = form.cleaned_data['initialBid']
+            form.save()
+            return HttpResponseRedirect(reverse('index'))
+
         else:
-            return redirect('new-listing.html')
-    except:
-        return redirect('index')
+            return render(request, 'auctions/new-listing.html')
+
+    context = {'form': form, }
+    return render(request, 'auctions/new-listing.html', context)
 
 
 def listing(request, listingId):
     try:
-        item = Listing.objects.get(id = listingId)
+        item = Listing.objects.get(id=listingId)
     except:
         return redirect('index')
     try:
-        comments = Comment.objects.filter(listingId = listingId)
+        comments = Comment.objects.filter(listingId=listingId)
         allComm = len(comments)
     except:
         comments = None
         allComm = None
     if request.user:
         try:
-            if Watchlist.objects.get(user = request.user, listingId = listingId):
+            if Watchlist.objects.get(user=request.user, listingId=listingId):
                 added = True
         except:
             added = False
 
         try:
-            listing = Listing.objects.get(id = listingId)
+            listing = Listing.objects.get(id=listingId)
             if listing.owner == request.user:
                 seller = True
             else:
                 seller = False
-            
+
         except:
             return redirect('index')
     else:
         added = False
         seller = False
     try:
-        w = Watchlist.objects.filter(user = request.user)
+        w = Watchlist.objects.filter(user=request.user)
         total = len(w)
-    except: total = None
+    except:
+        total = None
 
     return render(request, 'auctions/listing.html', {
-        'item': item,
+        'listing': item,
         'added': added,
         'seller': seller,
         'total': total,
@@ -167,7 +169,7 @@ def addToWatchlist(request, listingId):
         w.user = request.user.username
         w.listingId = listingId
         w.save()
-        return redirect('listing', listingId = listingId)
+        return redirect('listing', listingId=listingId)
     else:
         return redirect('index')
 
@@ -176,11 +178,12 @@ def addToWatchlist(request, listingId):
 def removeFromWatchlist(request, listingId):
     if request.user:
         try:
-            w = Watchlist.objects.get(user = request.user.username, listingId = listingId)
+            w = Watchlist.objects.get(
+                user=request.user.username, listingId=listingId)
             w.delete()
-            return redirect('listing', listingId = listingId)
+            return redirect('listing', listingId=listingId)
         except:
-            return redirect('listing', listingId = listingId)
+            return redirect('listing', listingId=listingId)
     else:
         return redirect('index')
 
@@ -189,12 +192,12 @@ def removeFromWatchlist(request, listingId):
 def watchlist(request, username):
     if request.user:
         try:
-            w = Watchlist.objects.filter(user = username)
+            w = Watchlist.objects.filter(user=username)
             items = []
             for i in w:
-                items.append(Listing.objects.filter(id = i.listingId))
+                items.append(Listing.objects.filter(id=i.listingId))
             try:
-                w = Watchlist.objects.filter(user = request.user)
+                w = Watchlist.objects.filter(user=request.user)
                 total = len(w)
             except:
                 total = None
@@ -204,7 +207,7 @@ def watchlist(request, username):
             })
         except:
             try:
-                w = Watchlist.objects.filter(user = request.user)
+                w = Watchlist.objects.filter(user=request.user)
                 total = len(w)
             except:
                 total = None
@@ -214,103 +217,66 @@ def watchlist(request, username):
             })
     else:
         return redirect('index')
-            
-
-def categories(request):
-    items = Listing.objects.raw('SELECT * FROM auctions_listing GROUP BY category HAVING COUNT(*)>=1')
-    try:
-        w = Watchlist.objects.filter(user = request.user)
-        total = len(w)
-    except:
-        total = None
-
-    return render(request, 'auctions/categories.html', {
-        'items': items,
-        'total': total
-    })
 
 
-def category(request, category):
-    items = Listing.objects.filter(category = category)
-    closed = 0
-    active = 0
-    for i in items:
-        if i.status == False:
-            closed =+1
-        else:
-            active =+1
-            
-    if active == 0:
-        empty = True
-    if active >= 0:
-        empty = False
-    try:
-        w = Watchlist.objects.filter(user = request.user)
-        total = len(w)
-    except:
-        total = None
-    
-    return render(request, 'auctions/category.html', {
-        'items': items,
-        'category': category,
-        'total': total,
-        'empty': empty,
-        'active': active,
-        'closed': closed
-    })
-
-
+@login_required(login_url='login')
 def makeOffer(request, listingId):
-    listing = Listing.objects.get(id = listingId)
+    listing = Listing.objects.get(id=listingId)
     price = listing.currentBid
     if request.method == 'POST':
         offer = int(request.POST.get('offer'))
         if offer > price:
-            item = Listing.objects.get(id = listingId)
+            item = Listing.objects.get(id=listingId)
             item.currentBid = offer
             item.save()
+
             try:
-                if Bid.objects.filter(id = listingId):
-                    bid = Bid.objects.filter(id = listingId)
+                if Bid.objects.filter(id=listingId):
+                    bid = Bid.objects.filter(id=listingId)
                     bid.delete()
                 newBid = Bid()
                 newBid.user = request.user
                 newBid.listingId = item.listingId
                 newBid.bid = offer
                 newBid.save()
+
             except:
                 newBid = Bid()
                 newBid.user = request.user
                 newBid.listingId = listingId
                 newBid.bid = offer
                 newBid.save()
-            response = redirect('listing', listingId = listingId)
-            response.set_cookie('success', 'Your bid has been succesfully added!', max_age=3)
+
+            response = redirect('listing', listingId=listingId)
+            response.set_cookie(
+                'success', 'Your bid has been succesfully added!', max_age=3)
             return response
         else:
-            response = redirect('listing', listingId = listingId)
-            response.set_cookie('error', 'Your bid must be greater than the current one', max_age=3)
+            response = redirect('listing', listingId=listingId)
+            response.set_cookie(
+                'error', 'Your bid must be greater than the current one', max_age=3)
             return response
     else:
         return redirect('index')
 
 
+@login_required(login_url='login')
 def closeListing(request, listingId):
     try:
-        listing = Listing.objects.get(id = listingId)
+        listing = Listing.objects.get(id=listingId)
     except:
         return redirect('index')
-    
+
     try:
         listing.status = False
-        listing.winner = Bid.objects.filter(listingId = listingId).last().user
+        listing.winner = Bid.objects.filter(listingId=listingId).last().user
         listing.save()
     except:
         listing.owner = request.user
         listing.save()
     try:
-        if Watchlist.objects.filter(listingId = listingId):
-            w = Watchlist.objects.filter(listingId = listingId)
+        if Watchlist.objects.filter(listingId=listingId):
+            w = Watchlist.objects.filter(listingId=listingId)
             w.delete()
         else:
             pass
@@ -318,27 +284,28 @@ def closeListing(request, listingId):
         pass
 
     return HttpResponseRedirect(reverse('listing', args=[listingId]))
-    
+
 
 @login_required(login_url='login')
 def closedListings(request):
-    items = Listing.objects.filter(status = False)
+    items = Listing.objects.filter(status=False)
     empty = False
     try:
-        w = Watchlist.objects.filter(user = request.user)
+        w = Watchlist.objects.filter(user=request.user)
         total = len(w)
     except:
         total = None
     return render(request, 'auctions/closed-listings.html', {
-        'items': items,
+        'listings': items,
         'total': total,
         'empty': empty
     })
 
 
+@login_required(login_url='login')
 def comment(request, listingId):
     try:
-        listing = Listing.objects.get(id = listingId)
+        listing = Listing.objects.get(id=listingId)
         if request.method == 'POST':
             newComment = Comment()
             newComment.comment = request.POST.get('comment')
@@ -350,3 +317,11 @@ def comment(request, listingId):
             return redirect('listing')
     except:
         return redirect('index')
+
+
+@login_required(login_url='login')
+def deleteListing(request, listingId):
+    listing = Listing.objects.get(id = listingId)
+    listing.delete()
+    
+    return HttpResponseRedirect(reverse("index"))

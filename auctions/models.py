@@ -4,23 +4,28 @@ from django.db import models
 from django.utils import timezone
 import math
 
+
 class User(AbstractUser):
     pass
 
 
 class Listing(models.Model):
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='seller')
+    owner = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='seller')
     title = models.CharField(max_length=64)
     description = models.TextField()
     initialBid = models.DecimalField(max_digits=8, decimal_places=2)
     currentBid = models.DecimalField(max_digits=8, decimal_places=2)
-    imageUrl = models.CharField(max_length=254)
+    image = models.ImageField(blank=True, null=True, default='no-image.jpg')
     category = models.CharField(max_length=64)
     status = models.BooleanField(default=True)
     date = models.DateTimeField(auto_now_add=True)
-    winner = models.ForeignKey(User, null=True, on_delete=models.PROTECT, related_name='buyer')
+    winner = models.ForeignKey(
+        User, null=True, on_delete=models.PROTECT, related_name='buyer')
+
     def createdAt(self):
         return self.date.strftime('%d %B %Y')
+
 
 class Bid(models.Model):
     listingId = models.IntegerField()
@@ -35,6 +40,7 @@ class Comment(models.Model):
     date = models.DateTimeField(auto_now_add=True)
 
     def createdAt(self):
+        return self.date.strftime('%d %B %Y')
         now = timezone.now()
         dif = now - self.date
 
@@ -45,13 +51,13 @@ class Comment(models.Model):
             else:
                 return str(seconds) + ' seconds ago'
 
-        if dif.days == 0 and dif.seconds >=60 and dif.seconds < 3600:
+        if dif.days == 0 and dif.seconds >= 60 and dif.seconds < 3600:
             minutes = math.floor(dif.seconds/60)
             if minutes == 1:
                 return str(minutes) + ' minute ago'
             else:
                 return str(minutes) + ' minutes ago'
-        
+
         if dif.days == 0 and dif.seconds >= 0 and dif.seconds < 86400:
             hours = math.floor(dif.seconds/3600)
             if hours == 1:
@@ -79,6 +85,7 @@ class Comment(models.Model):
                 return str(years) + ' year ago'
             else:
                 return str(years) + ' years ago'
+
 
 class Watchlist(models.Model):
     listingId = models.IntegerField()

@@ -1,51 +1,67 @@
-{% extends 'auctions/layout.html' %}
+{% extends "auctions/layout.html" %}
 {% load static %}
 {% block body %}
-    <div class="container mt-3">
-        {% if empty %}
-            <div class="row">
-                <div class="col-md-5 p-5">
-                    <img src="{% static 'auctions/img/no-listings.png' %}" width="80%" alt="">
+<div class="container mt-4">
+    <div class="row row-cols-1 row-cols-md-3">
+
+        {% for listing in listings %}
+        <div class="col-md-4 col-lg-3 my-4">
+            <div class="card border-light mb-3 h-100">
+                <a href="{% url 'listing' listing.id %}">
+                    <div class="image">
+                        <img src="{{ listing.image.url }}"
+                            alt="{{ listing.image.url }}">
+                        {% if listing.status %}
+                        <div class="card-img-overlay">
+                            <span class="badge badge-pill badge-danger float-right">Active</span>
+                        </div>
+                        {% else %}
+                        <div class="card-img-overlay">
+                            <span class="badge badge-pill badge-dark float-right">Closed</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </a>
+                <div class="card-body">
+                    <a href="{% url 'listing' listing.id %}">
+                        <h5 class="card-title">{{ listing.title }}</h5>
+                    </a>
+                    <table class="table table-sm">
+                        <tr class="text-secondary">
+                            <th class="row">Seller:</th>
+                            <td>{{ listing.owner }}</td>
+                        </tr>
+                        <tr class="text-secondary">
+                            <th class="row">Initial bid:</th>
+                            <td>${{ listing.initialBid }}</td>
+                        </tr>
+                        {% if listing.initialBid != listing.currentBid %}
+                        <tr>
+                            <th class="row">Winner bid:</th>
+                            <th>${{ listing.currentBid }}</th>
+                        </tr>
+                        <tr>
+                            <th class="row">Winner: </th>
+                            <th>{{ listing.winner }}</th>
+                        </tr>
+                        {% endif %}
+                    </table>
                 </div>
-                <div class="col-md-7">
-                    <h3 class="mt-5 pt-5">There Are No Closed Listings Yet</h3>
-                    <h5 class="pt-2">Please check back soon</h5>
+                <div class="card-footer">
+                    <small class="text-muted">Published on: {{ listing.createdAt }}</small>
                 </div>
             </div>
-        {% else %}
-            
-            {% for item in items %}
-                <div class="card mb-3 mt-5 p-2">
-                    <div class="row">
-                        <div class="col-md-4 d-flex align-items-center p-5">
-                            <img src="{{ item.imageUrl }}" alt="" class="card-img">
-                        </div>
-                        <div class="col-md-8">
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-9">
-                                        <a href="{% url 'listing' item.id %}">
-                                            <h4 class="card-title">{{ item.title }}</h4>
-                                        </a>
-                                    </div>
-                                    <div class="col-md-3 text-center">
-                                        {% if item.status == True %}
-                                            <p class="statusActive">Active</p>
-                                        {% else %}
-                                            <p class="statusClosed">Closed</p>
-                                        {% endif %}
-                                    </div>
-                                </div><hr>
-                                <!-- <p class="card-text"><b>Description: </b><br>{{ item.description }}</p> -->
-                                <p><b class="mr-2">Final bid:</b>${{ item.currentBid }}</p>
-                                <p><b class="mr-2">Winner:</b>{{ item.winner }}</p>
-                                <p class="card-text"><b class="mr-2">Published on: </b><small class="text-muted">{{ item.createdAt }}</small></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
+        </div>
+        {% empty %}
+        <div class="col-md-4">
+            <img src="{% static 'img/no-listings.png' %}" width="80%" alt="no-listings">
+        </div>
+        <div class="col-md-8">
+            <h3 class="mt-5 pt-5">No Active Listings</h3>
+            <h5 class="pt-2">Please check back soon.</h5>
+        </div>
+        {% endfor %}
 
-        {% endif %} 
     </div>
+</div>
 {% endblock %}

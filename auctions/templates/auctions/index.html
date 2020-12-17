@@ -1,48 +1,61 @@
 {% extends "auctions/layout.html" %}
 {% load static %}
 {% block body %}
-    <div class="container mt-3">
-        {% for item in items %}
-            <div class="card mb-3 mt-4">
-                <div class="row">
-                    <div class="col-md-4 d-flex align-items-center p-5">
-                        <img src="{{ item.imageUrl }}" alt="image" class="img-fluid imageThumb">
-                    </div>
-                    <div class="col-md-8">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-9">
-                                    <a href="{% url 'listing' item.id %}">
-                                        <h4 class="card-title">{{ item.title }}</h4>
-                                    </a>
-                                </div>
-                                <div class="col-md-3 text-center">
-                                    {% if item.status == True %}
-                                        <p class="statusActive">Active</p>
-                                    {% else %}
-                                        <p class="statusClosed">Closed</p>
-                                    {% endif %}
-                                </div>
-                            </div><hr>
-                            <p class="card-text"><b>Description: </b><br>{{ item.description }}</p>
-                            <p class="card-text"><b>Category: </b><a href="{% url 'category' item.category%}">{{ item.category }}</a></p>
-                            <p><b>Price: </b>${{ item.initialBid }}</p>
-                            <p class="card-text"><b>Published on: </b><small class="text-muted">{{ item.createdAt }}</small></p>
+<div class="container mt-4">
+    <div class="row row-cols-1 row-cols-md-3">
+        {% for listing in listings %}
+        <div class="col-md-4 col-lg-3 my-4">
+            <div class="card border-light mb-3 h-100">
+                <a href="{% url 'listing' listing.id %}">
+                    <div class="image">
+                        <img src="{{ listing.image.url }}" alt="{{ listing.image.url }}">
+                        {% if listing.status %}
+                        <div class="card-img-overlay">
+                            <span class="badge badge-pill badge-danger float-right">Active</span>
                         </div>
+                        {% else %}
+                        <div class="card-img-overlay">
+                            <span class="badge badge-pill badge-dark float-right">Closed</span>
+                        </div>
+                        {% endif %}
                     </div>
+                </a>
+                <div class="card-body">
+                    <a href="{% url 'listing' listing.id %}">
+                        <h5 class="card-title">{{ listing.title }}</h5>
+                    </a>
+                    <table class="table table-sm">
+                        <tr>
+                            <th class="row">Seller:</th>
+                            <td>{{ listing.owner }}</td>
+                        </tr>
+                        <tr>
+                            <th class="row">Initial bid:</th>
+                            <td>${{ listing.initialBid }}</td>
+                        </tr>
+                        {% if listing.initialBid != listing.currentBid %}
+                        <tr>
+                            <th class="row">Current bid:</th>
+                            <td>${{ listing.currentBid }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted">Published on: {{ listing.createdAt }}</small>
                 </div>
             </div>
-            {% empty %}
-                <div class="row">
-                    <div class="col-md-5 p-5">
-                        <img src="{% static 'auctions/img/no-listings.png' %}" width="80%" alt="">
-                    </div>
-                    <div class="col-md-7">
-                        <h3 class="mt-5 pt-5">No Active Listings</h3>
-                        <h5 class="pt-2">Please check back soon.</h5>
-                    </div>
-                </div>
+        </div>
+        {% empty %}
+        <div class="col-md-4">
+            <img src="{% static 'img/no-listings.png' %}" width="80%" alt="no-listings">
+        </div>
+        <div class="col-md-8">
+            <h3 class="mt-5 pt-5">No Active Listings</h3>
+            <h5 class="pt-2">Please check back soon.</h5>
+        </div>
         {% endfor %}
+
     </div>
-    
+</div>
 {% endblock %}

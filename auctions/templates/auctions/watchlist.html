@@ -1,56 +1,65 @@
 {% extends 'auctions/layout.html' %}
 {% load static %}
 {% block body %}
+<div class="container mt-4">
+    <div class="row row-cols-1 row-cols-md-3">
 
-    <div class="container mt-3">
-        <h2>Watchlist</h2>
-        <div class="row">
-            <div class="card-deck">
-                {% for item in items %}
-                    {% for i in item %}
-                        <div class="col-md-4">
-                            <div class="card mt-5">
-                                <div class="imageContainer">
-                                    <a href="{% url 'listing' i.id %}">
-                                        <img src="{{ i.imageUrl}}" class="card-img-top p-2 imageThumb" alt="image">
-                                    </a>
-                                </div><hr>
-                                <div class="card-body">
-                                    <a href="{% url 'listing' i.id %}">
-                                        <h5 class="card-title">{{ i.title }}</h5>
-                                    </a>
-                                    <p class="card-text">{{ i.description }}</p>
+        {% for i in items %}
+            {% for item in i %}
+            <div class="col-md-4 col-lg-3 my-4">
+                <div class="card border-light mb-3 h-100">
+                    <a href="{% url 'listing' item.id %}">
+                        <div class="image">
+                            <img src="{% if not item.image.url %} {% static 'img/no-image.jpg' %} {% else %} {{ item.image.url }} {% endif %}"
+                                alt="{{ item.image.url }}">
+                            {% if item.status %}
+                                <div class="card-img-overlay">
+                                    <span class="badge badge-pill badge-danger float-right">Active</span>
                                 </div>
-                                <div class="card-footer">
-                                    <div class="row">
-                                        <div class="col-md-8">
-                                            <small class="text-muted">Published on: {{ i.createdAt }}</small>
-                                        </div>
-                                        <div class="col-md-4 text-center">
-                                            {% if i.status == True %}
-                                                <p class="statusActive">Active</p>
-                                            {% else %}
-                                                <p class="statusClosed">Closed</p>
-                                            {% endif %}
-                                        </div>
-                                    </div>
+                            {% else %}
+                                <div class="card-img-overlay">
+                                    <span class="badge badge-pill badge-dark float-right">Closed</span>
                                 </div>
-                            </div>
+                            {% endif %}
                         </div>
-                    {% endfor %}
-                    {% empty %}
-                        <div class="row">
-                            <div class="col-md-5 p-5">
-                                <img src="{% static 'auctions/img/no-listings.png' %}" width="80%" alt="">
-                            </div>
-                            <div class="col-md-7">
-                                <h3 class="mt-5 pt-5">No Listings Found in your Watchlist</h3>
-                                <h5>Go back to <a href="{% url 'index' %}">Active listings</a>.</h5>
-                            </div>
-                        </div>
-                {% endfor %}
+                    </a>
+                    <div class="card-body">
+                        <a href="{% url 'listing' item.id %}">
+                            <h5 class="card-title">{{ item.title }}</h5>
+                        </a>
+                        <table class="table table-sm">
+                            <tr>
+                                <th class="row">Seller:</th>
+                                <td>{{ item.owner }}</td>
+                            </tr>
+                            <tr>
+                                <th class="row">Initial bid:</th>
+                                <td>${{ item.initialBid }}</td>
+                            </tr>
+                            {% if item.initialBid != item.currentBid %}
+                            <tr>
+                                <th class="row">Current bid:</th>
+                                <td>${{ item.currentBid }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                    <div class="card-footer">
+                        <small class="text-muted">Published on: {{ item.createdAt }}</small>
+                    </div>
+                </div>
             </div>
+            {% endfor %}
+        {% empty %}
+        <div class="col-md-4">
+            <img src="{% static 'img/no-listings.png' %}" width="80%" alt="no-listings">
         </div>
-    </div>
+        <div class="col-md-8">
+            <h3 class="mt-5 pt-5">No Active Listings in your Watchlist</h3>
+            <h5 class="pt-2">Add some to display them in here.</h5>
+        </div>
+        {% endfor %}
 
-{% endblock %}
+    </div>
+</div>
+{% endblock body %}
